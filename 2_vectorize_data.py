@@ -99,10 +99,10 @@ def vectorize(data, vocab_map, output_file):
 
 
 @click.command()
-@click.option('--file_wiki', default='wikipedia_knowledge')
-@click.option('--file_mimic', default='combined_dataset')
-@click.option('--output_wiki', default='wikivec')
-@click.option('--output_mimic', default='notevec')
+@click.option('--file_wiki', default='data/wikipedia_knowledge')
+@click.option('--file_mimic', default='data/combined_dataset')
+@click.option('--output_wiki', default='data/wikivec')
+@click.option('--output_mimic', default='data/notevec')
 def process_data(file_wiki,
                  file_mimic,
                  output_wiki,
