@@ -9,6 +9,19 @@ STOPWORDS = get_stop_words('english')
 
 
 def parse_note_events(file='NOTEEVENTS.csv'):
+    """
+    Parse MIMIC-III NOTEEVENTS file to extract subject_id to discharge summary mapping.
+    
+    Parameters
+    ----------
+    file : str
+        File path to NOTEEVENTS.csv
+    
+    Returns
+    -------
+    dict
+        Dictionary of subject_id to discharge summary
+    """
     subject_id_to_summary = defaultdict(list)
     with open(file, 'r') as f:
         reader = csv.reader(f, delimiter=',', quotechar='"')
@@ -21,7 +34,25 @@ def parse_note_events(file='NOTEEVENTS.csv'):
     return subject_id_to_summary
 
 
-def freq_counts(texts, stop_words=STOPWORDS, threshold=10):            
+def freq_counts(texts, stop_words=STOPWORDS, threshold=10):
+    """
+    Build a vocabulary from a dictionary of texts. Excludes stop words, digits, and words that occur less 
+    than `threshold` times.
+    
+    Parameters
+    ----------
+    texts : dict
+        Dictionary of texts to be used for building vocabulary
+    stop_words : list
+        List of stop words to be excluded from vocabulary
+    threshold : int
+        Minimum number of times a word must occur to be included in vocabulary
+    
+    Returns
+    -------
+    dict
+        Dictionary of words and their frequencies
+    """
     vocab = defaultdict(int)
     for _, v in texts.items():
         for text in v:
@@ -34,6 +65,22 @@ def freq_counts(texts, stop_words=STOPWORDS, threshold=10):
 
 
 def parse_diagnoses(file='DIAGNOSES_ICD.csv'):
+    """
+    Parse MIMIC-III DIAGNOSES_ICD file to map hospital admission ID to ICD codes. Also computes ICD code
+    frequencies.
+    
+    Parameters
+    ----------
+    file : str
+        File path to DIAGNOSES_ICD.csv
+    
+    Returns
+    -------
+    dict
+        Dictionary of hospital admission ID to list of associated ICD codes
+    dict
+        Dictionary of ICD codes to their frequencies
+    """
     hadmid_to_codes = defaultdict(list)
     with open(file, 'r') as f:
         line = f.readline()
@@ -61,6 +108,27 @@ def combine_datasets(subject_id_to_summary,
                      id_list,
                      code_freq_threshold=0,
                      file='combined_dataset'):
+    """
+    Combine datasets from processed MIMIC-III NOTEEVENTS and DIAGNOSES_ICD files to create a dataset with
+    hospital admission ID, associated ICD codes, and (processed) note text.
+    
+    Parameters
+    ----------
+    subject_id_to_summary : dict
+        Dictionary of subject_id to discharge summary
+    hadmid_to_codes : dict
+        Dictionary of hospital admission ID to list of associated ICD codes
+    vocab : dict
+        Dictionary of words and their frequencies
+    code_freqs : dict
+        Dictionary of ICD codes to their frequencies
+    id_list : list
+        List of hospital admission IDs to be included in dataset
+    code_freq_threshold : int
+        Minimum number of times a ICD code must occur to be included in dataset
+    file : str
+        File path to output dataset
+    """
     with open(file, 'w') as f:
         for id in id_list:
             if len(hadmid_to_codes[id]) > 0:
