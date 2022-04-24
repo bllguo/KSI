@@ -176,14 +176,8 @@ def vectorize(data, output_file, vectorizer):
     embed = embed.A
     embed = np.array(embed, dtype=float)
     np.save(output_file, embed)
+    
 
-
-@click.command()
-@click.option('--file_wiki', default='data/wikipedia_knowledge')
-@click.option('--file_mimic', default='data/combined_dataset')
-@click.option('--output_wiki', default='data/wikivec')
-@click.option('--output_mimic', default='data/notevec')
-@click.option('--vectorizer_type', default='binary', type=click.Choice(['binary', 'tfidf']))
 def process_data(file_wiki,
                  file_mimic,
                  output_wiki,
@@ -215,5 +209,23 @@ def process_data(file_wiki,
     vectorize(notes, output_mimic, vectorizer)
 
 
+@click.command()
+@click.option('--file_wiki', default='data/wikipedia_knowledge')
+@click.option('--file_mimic', default='data/combined_dataset')
+@click.option('--output_wiki', default='data/wikivec')
+@click.option('--output_mimic', default='data/notevec')
+@click.option('--vectorizer_type', default='binary', type=click.Choice(['binary', 'tfidf']))
+def process_data_(file_wiki,
+                  file_mimic,
+                  output_wiki,
+                  output_mimic,
+                  vectorizer_type):
+    process_data(file_wiki,
+                 file_mimic,
+                 output_wiki,
+                 output_mimic,
+                 vectorizer_type)
+
+
 if __name__ == "__main__":
-    process_data()
+    process_data_()

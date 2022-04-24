@@ -91,6 +91,7 @@ def save_data(features,
               notevec, 
               wikivoc, 
               file_newwikivec,
+              out_dir='data/',
               test_split=.2, 
               val_split=.125, 
               seed=42):
@@ -108,8 +109,8 @@ def save_data(features,
                 if code in wikivoc:
                     label_to_ix[code]=len(label_to_ix)
                     ix_to_label[label_to_ix[code]]=code
-    np.save('data/label_to_ix', label_to_ix)
-    np.save('data/ix_to_label', ix_to_label)
+    np.save(f'{out_dir}label_to_ix', label_to_ix)
+    np.save(f'{out_dir}ix_to_label', ix_to_label)
     
     data = produce_multihot_labels(data, wikivoc, label_to_ix)
     
@@ -117,9 +118,9 @@ def save_data(features,
     training_data, val_data = train_test_split(training_data, test_size=val_split, random_state=seed)
     
     
-    np.save('data/training_data', training_data)
-    np.save('data/test_data', test_data)
-    np.save('data/val_data', val_data)
+    np.save(f'{out_dir}training_data', training_data)
+    np.save(f'{out_dir}test_data', test_data)
+    np.save(f'{out_dir}val_data', val_data)
     
     word_to_ix = {}
     ix_to_word = {}
@@ -130,8 +131,8 @@ def save_data(features,
             if word not in word_to_ix:
                 word_to_ix[word] = len(word_to_ix)+1
                 ix_to_word[word_to_ix[word]] = word  
-    np.save('data/word_to_ix', word_to_ix)
-    np.save('data/ix_to_word', ix_to_word)
+    np.save(f'{out_dir}word_to_ix', word_to_ix)
+    np.save(f'{out_dir}ix_to_word', ix_to_word)
     
     code_dict = {}
     for codes in labels:
@@ -142,32 +143,19 @@ def save_data(features,
     for i in range(len(ix_to_label)):
         newwikivec.append(wikivec[code_dict[ix_to_label[i]]])
     newwikivec=np.array(newwikivec)
-    np.save(file_newwikivec, newwikivec)
+    np.save(f'{out_dir}newwikivec', newwikivec)
 
-   
-@click.command()
-@click.option('--file_wiki', default='data/wikipedia_knowledge')
-@click.option('--file_mimic', default='data/combined_dataset')
-@click.option('--output_wikivoc', default='data/wikivoc')
-@click.option('--file_wikivec', default='data/wikivec.npy')
-@click.option('--file_notevec', default='data/notevec.npy')
-@click.option('--file_newwikivec', default='data/newwikivec.npy')
-@click.option('--test_split', default=0.2)
-@click.option('--val_split', default=0.125)
-@click.option('--seed', default=42)
-@click.option('--original', default=False)
-@click.option('--vectorizer_type', default='binary', type=click.Choice(['binary', 'tfidf']))
+
 def preprocess(file_wiki,
                file_mimic,
-               output_wikivoc,
                file_wikivec,
                file_notevec,
-               file_newwikivec,
-               test_split,
-               val_split,
-               seed,
-               original,
-               vectorizer_type):
+               out_dir='data/',
+               test_split=0.2,
+               val_split=0.125,
+               seed=42,
+               original=False,
+               vectorizer_type='binary'):
     wikivec=np.load(file_wikivec)
     notevec=np.load(file_notevec)
     
@@ -177,14 +165,47 @@ def preprocess(file_wiki,
         wiki_codes['d_698']=[125]
         wiki_codes['d_305']=[250]
         wiki_codes['d_386']=[219]
-    np.save(output_wikivoc, wikivoc)
+    np.save(f'{out_dir}wikivoc', wikivoc)
     features, labels = get_XY(file_mimic)
     
     wikivec = update_wikivec(wikivec, wikivoc, wiki_codes, labels,
                              combine_vecs=not original, vectorizer_type=vectorizer_type)
-    save_data(features, labels, wikivec, notevec, wikivoc, file_newwikivec,
+    save_data(features, labels, wikivec, notevec, wikivoc, out_dir,
               test_split, val_split, seed)
 
 
+@click.command()
+@click.option('--file_wiki', default='data/wikipedia_knowledge')
+@click.option('--file_mimic', default='data/combined_dataset')
+@click.option('--file_wikivec', default='data/wikivec.npy')
+@click.option('--file_notevec', default='data/notevec.npy')
+@click.option('--out_dir', default='data/')
+@click.option('--test_split', default=0.2)
+@click.option('--val_split', default=0.125)
+@click.option('--seed', default=42)
+@click.option('--original', default=False)
+@click.option('--vectorizer_type', default='binary', type=click.Choice(['binary', 'tfidf']))
+def preprocess_(file_wiki,
+                file_mimic,
+                file_wikivec,
+                file_notevec,
+                out_dir,
+                test_split,
+                val_split,
+                seed,
+                original,
+                vectorizer_type):
+    preprocess(file_wiki,
+               file_mimic,
+               file_wikivec,
+               file_notevec,
+               out_dir,
+               test_split,
+               val_split,
+               seed,
+               original,
+               vectorizer_type)
+
+
 if __name__ == "__main__":
-    preprocess()
+    preprocess_()

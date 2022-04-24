@@ -147,13 +147,7 @@ def combine_datasets(subject_id_to_summary,
                     f.write('\n')
                 f.write('end!\n')
 
-                
-@click.command()
-@click.option('--file_notes', default='data/NOTEEVENTS.csv')
-@click.option('--file_diagnoses', default='data/DIAGNOSES_ICD.csv')
-@click.option('--word_threshold', default=10)
-@click.option('--code_freq_threshold', default=0)
-@click.option('--output_file', default='data/combined_dataset')
+
 def process_mimic(file_notes,
                   file_diagnoses,
                   word_threshold,
@@ -170,6 +164,24 @@ def process_mimic(file_notes,
                      id_list=id_list,
                      code_freq_threshold=code_freq_threshold,
                      file=output_file)
+    
+          
+@click.command()
+@click.option('--file_notes', default='data/NOTEEVENTS.csv')
+@click.option('--file_diagnoses', default='data/DIAGNOSES_ICD.csv')
+@click.option('--word_threshold', default=10)
+@click.option('--code_freq_threshold', default=0)
+@click.option('--output_file', default='data/combined_dataset')
+def process_mimic_(file_notes,
+                   file_diagnoses,
+                   word_threshold,
+                   code_freq_threshold,
+                   output_file):
+    process_mimic(file_notes, 
+                  file_diagnoses, 
+                  word_threshold, 
+                  code_freq_threshold, 
+                  output_file)
 
 if __name__ == "__main__":
-    process_mimic()
+    process_mimic_()
