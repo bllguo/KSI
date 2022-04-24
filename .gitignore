@@ -1,0 +1,11 @@
+*.npy
+!IDlist.npy
+
+*.csv
+*.pt
+*.json
+
+.ipynb_checkpoints
+__pycache__
+
+combined_dataset
