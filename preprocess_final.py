@@ -45,7 +45,12 @@ def get_XY(file):
     return features, labels
     
         
-def update_wikivec(wikivec, wikivoc, wiki_codes, labels):
+def update_wikivec(wikivec, 
+                   wikivoc, 
+                   wiki_codes, 
+                   labels, 
+                   combine_vecs=True, 
+                   vectorizer_type='binary'):
     label_to_ix = {}
     ix_to_label = {}
     for codes in labels:
@@ -57,10 +62,13 @@ def update_wikivec(wikivec, wikivoc, wiki_codes, labels):
     tempwikivec=[]
     for i in range(len(ix_to_label)):
         if ix_to_label[i] in wikivoc:
-            vecs = [wikivec[j] for j in wiki_codes[ix_to_label[i]]]
-            temp = np.sum(vecs, axis=0)
-            temp[temp > 1] = 1
-            # temp=wikivec[wiki_codes[ix_to_label[i]][0]]
+            if combine_vecs:
+                vecs = [wikivec[j] for j in wiki_codes[ix_to_label[i]]]
+                temp = np.sum(vecs, axis=0)
+                if vectorizer_type == 'binary':
+                    temp[temp > 1] = 1
+            else:
+                temp = wikivec[wiki_codes[ix_to_label[i]][0]]
             tempwikivec.append(temp)
         else:
             tempwikivec.append([0.0]*wikivec.shape[1])
@@ -147,6 +155,8 @@ def save_data(features,
 @click.option('--test_split', default=0.2)
 @click.option('--val_split', default=0.125)
 @click.option('--seed', default=42)
+@click.option('--original', default=False)
+@click.option('--vectorizer_type', default='binary', type=click.Choice(['binary', 'tfidf']))
 def preprocess(file_wiki,
                file_mimic,
                output_wikivoc,
@@ -155,19 +165,23 @@ def preprocess(file_wiki,
                file_newwikivec,
                test_split,
                val_split,
-               seed):
+               seed,
+               original,
+               vectorizer_type):
     wikivec=np.load(file_wikivec)
     notevec=np.load(file_notevec)
     
     wikivoc, wiki_codes = get_wiki_codes(file_wiki)
-    # wiki_codes['d_072']=[214]
-    # wiki_codes['d_698']=[125]
-    # wiki_codes['d_305']=[250]
-    # wiki_codes['d_386']=[219]
+    if original:
+        wiki_codes['d_072']=[214]
+        wiki_codes['d_698']=[125]
+        wiki_codes['d_305']=[250]
+        wiki_codes['d_386']=[219]
     np.save(output_wikivoc, wikivoc)
     features, labels = get_XY(file_mimic)
     
-    wikivec = update_wikivec(wikivec, wikivoc, wiki_codes, labels)
+    wikivec = update_wikivec(wikivec, wikivoc, wiki_codes, labels,
+                             combine_vecs=not original, vectorizer_type=vectorizer_type)
     save_data(features, labels, wikivec, notevec, wikivoc, file_newwikivec,
               test_split, val_split, seed)
 

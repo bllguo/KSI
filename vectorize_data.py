@@ -183,7 +183,7 @@ def vectorize(data, output_file, vectorizer):
 @click.option('--file_mimic', default='data/combined_dataset')
 @click.option('--output_wiki', default='data/wikivec')
 @click.option('--output_mimic', default='data/notevec')
-@click.option('--vectorizer_type', default='binary', type=click.Choice(['binary', 'count', 'tfidf']))
+@click.option('--vectorizer_type', default='binary', type=click.Choice(['binary', 'tfidf']))
 def process_data(file_wiki,
                  file_mimic,
                  output_wiki,
@@ -208,8 +208,6 @@ def process_data(file_wiki,
     
     if vectorizer_type == 'binary':
         vectorizer = CountVectorizer(min_df=1, vocabulary=vocab_map, binary=True)
-    elif vectorizer_type == 'count':
-        vectorizer = CountVectorizer(min_df=1, vocabulary=vocab_map)
     elif vectorizer_type == 'tfidf':
         vectorizer = TfidfVectorizer(min_df=1, vocabulary=vocab_map)
     
