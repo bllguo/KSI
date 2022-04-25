@@ -42,6 +42,22 @@ if __name__ == "__main__":
                out_dir=f'data/{subdir}',
                original=False,
                vectorizer_type='binary')
+    
+    # original dataset from paper, normalized word frequencies
+    subdir = 'original_freqs/'
+    os.makedirs(f'data/{subdir}', exist_ok=True)
+    process_data(file_wiki=file_wiki,
+                 file_mimic='data/combined_dataset',
+                 output_wiki=f'data/{subdir}wikivec',
+                 output_mimic=f'data/{subdir}notevec',
+                 vectorizer_type='count')
+    preprocess(file_wiki=file_wiki,
+               file_mimic='data/combined_dataset',
+               file_wikivec=f'data/{subdir}wikivec.npy',
+               file_notevec=f'data/{subdir}notevec.npy',
+               out_dir=f'data/{subdir}',
+               original=False,
+               vectorizer_type='count')
 
     # original dataset from paper, tfidf
     subdir = 'original_tfidf/'

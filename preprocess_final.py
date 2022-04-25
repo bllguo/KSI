@@ -183,7 +183,7 @@ def preprocess(file_wiki,
 @click.option('--val_split', default=0.125)
 @click.option('--seed', default=42)
 @click.option('--original', default=False)
-@click.option('--vectorizer_type', default='binary', type=click.Choice(['binary', 'tfidf']))
+@click.option('--vectorizer_type', default='binary', type=click.Choice(['binary', 'count', 'tfidf']))
 def preprocess_(file_wiki,
                 file_mimic,
                 file_wikivec,
