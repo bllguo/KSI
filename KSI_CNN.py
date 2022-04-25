@@ -1,0 +1,102 @@
+import torch
+import torch.nn.functional as F
+import torch.nn as nn
+
+
+class KSI(nn.Module):
+    def __init__(self, n_ksi_embedding, n_vocab):
+        super().__init__()
+        self.ksi_embedding = nn.Linear(n_vocab, n_ksi_embedding)
+        self.ksi_attention = nn.Linear(n_ksi_embedding, n_ksi_embedding)
+        self.ksi_output = nn.Linear(n_ksi_embedding, 1)
+        
+    def forward_ksi(self, notevec, wikivec):
+        with torch.profiler.record_function("KSI Forward"):
+            n = notevec.shape[0]
+            n_codes = wikivec.shape[0]
+            notevec = notevec.unsqueeze(1).expand(n, n_codes, -1)
+            wikivec = wikivec.unsqueeze(0)
+        
+            z = torch.mul(wikivec, notevec)
+            e = self.ksi_embedding(z)
+            attention_scores = torch.sigmoid(self.ksi_attention(e))
+            v = torch.mul(attention_scores, e)
+            s = self.ksi_output(v)
+            o = s.squeeze(2)
+        
+        return o
+    
+    
+class ModifiedKSI(nn.Module):
+    """
+    Use weighted sum of intersecting elements of note and wiki vectors, to allow for 
+    incorporating frequency information.
+    """
+    def __init__(self, n_ksi_embedding, n_vocab):
+        super().__init__()
+        self.weights = nn.Linear(2, 1, bias=False)
+        self.ksi_embedding = nn.Linear(n_vocab, n_ksi_embedding)
+        self.ksi_attention = nn.Linear(n_ksi_embedding, n_ksi_embedding)
+        self.ksi_output = nn.Linear(n_ksi_embedding, 1)
+        
+    def forward_ksi(self, notevec, wikivec):
+        with torch.profiler.record_function("Modified KSI Forward"):
+            n = notevec.shape[0]
+            n_codes = wikivec.shape[0]
+            notevec = notevec.unsqueeze(1).expand(n, n_codes, -1)
+            wikivec = wikivec.unsqueeze(0).expand(n, n_codes, -1)
+            
+            device = next(self.parameters()).device
+        
+            mask = torch.mul(torch.where(wikivec > 1, 
+                                         torch.tensor(1, dtype=wikivec.dtype).to(device), 
+                                         wikivec), 
+                             torch.where(notevec > 1, 
+                                         torch.tensor(1, dtype=notevec.dtype).to(device), 
+                                         notevec))
+        
+            z = self.weights(torch.stack(
+                [torch.where(mask > 0, notevec, torch.tensor(0, dtype=notevec.dtype).to(device)), 
+                 torch.where(mask > 0, wikivec, torch.tensor(0, dtype=wikivec.dtype).to(device))], dim=-1)).squeeze()
+            e = self.ksi_embedding(z)
+            attention_scores = torch.sigmoid(self.ksi_attention(e))
+            v = torch.mul(attention_scores, e)
+            s = self.ksi_output(v)
+            o = s.squeeze(2)
+        
+        return o
+
+
+class CNN(nn.Module):
+    def __init__(self, n_words, n_wiki, n_embedding, ksi=None, **kwargs):
+        super().__init__(**kwargs)
+        self.ksi = ksi
+        self.word_embeddings = nn.Embedding(n_words+1, n_embedding)
+        self.dropout_embedding = nn.Dropout(p=0.2)
+        self.conv1 = nn.Conv1d(n_embedding, 100, 3)
+        self.conv2 = nn.Conv1d(n_embedding, 100, 4)
+        self.conv3 = nn.Conv1d(n_embedding, 100, 5)
+        self.output = nn.Linear(n_embedding*3, n_wiki)
+    
+    def forward(self, note, notevec=None, wikivec=None):
+        # batch_size, n = note.shape
+        with torch.profiler.record_function("CNN Embedding"):
+            embeddings = self.word_embeddings(note) # (batch_size, n, n_embedding)
+            embeddings = self.dropout_embedding(embeddings)
+            embeddings = embeddings.permute(0, 2, 1) # (batch_size, n_embedding, n)
+        
+        with torch.profiler.record_function("CNN Forward"):
+            a1 = F.relu(self.conv1(embeddings))
+            a1 = F.max_pool1d(a1, a1.shape[2])
+            a2 = F.relu(self.conv2(embeddings))
+            a2 = F.max_pool1d(a2, a2.shape[2])
+            a3 = F.relu(self.conv3(embeddings))
+            a3 = F.max_pool1d(a3, a3.shape[2])
+            combined = torch.cat([a1, a2, a3], 1).squeeze(2)
+       
+            out = self.output(combined)
+        if self.ksi:
+            out += self.ksi.forward_ksi(notevec, wikivec)
+        
+        scores = torch.sigmoid(out)
+        return scores
