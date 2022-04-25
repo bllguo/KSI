@@ -100,3 +100,36 @@ class CNN(nn.Module):
         
         scores = torch.sigmoid(out)
         return scores
+
+
+class CAML(nn.Module):
+    def __init__(self, n_words, n_wiki, n_embedding, n_hidden=300, ksi=None, **kwargs):
+        super().__init__(**kwargs)
+        self.ksi = ksi
+        self.word_embeddings = nn.Embedding(n_words+1, n_embedding)
+        self.dropout_embedding = nn.Dropout(p=0.2)
+        
+        self.conv = nn.Conv1d(n_embedding, n_hidden, 10, padding=5)
+        self.H = nn.Linear(n_hidden, n_wiki, bias=False)
+        self.output = nn.Linear(n_hidden, n_wiki)
+    
+    def forward(self, note, notevec=None, wikivec=None):
+        # batch_size, n = note.shape
+        with torch.profiler.record_function("CAML Embedding"):
+            embeddings = self.word_embeddings(note) # (batch_size, n, n_embedding)
+            embeddings = self.dropout_embedding(embeddings)
+            embeddings = embeddings.permute(0, 2, 1) # (batch_size, n_embedding, n)
+        
+        with torch.profiler.record_function("CAML Forward"):
+            a1 = F.relu(self.conv(embeddings).permute(0, 2, 1))
+            alpha = self.H.weight.matmul(a1.permute(0, 2, 1))
+            alpha = F.softmax(alpha, dim=2)
+            m = alpha.matmul(a1)
+            out = self.output.weight.mul(m).sum(dim=2).add(self.output.bias)
+            
+        if self.ksi:
+            out += self.ksi.forward_ksi(notevec, wikivec)
+        
+        scores = torch.sigmoid(out)
+        return scores
+
