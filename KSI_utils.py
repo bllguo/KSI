@@ -59,6 +59,7 @@ def train(model,
           scheduler=None,
           device='cpu',
           init_hidden=False):
+    model.train()
     for data in dataloader:
         optimizer.zero_grad()
         note, embeddings, labels = data
@@ -146,7 +147,6 @@ def train_model(model,
                 log_path='./log',
                 device='cpu',
                 init_hidden=False):
-    model.train()
     loss_function = nn.BCELoss()
     if optimizer is None:
         optimizer = optim.Adam(model.parameters())
