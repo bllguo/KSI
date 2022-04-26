@@ -57,10 +57,13 @@ def train(model,
           optimizer=None, 
           profiler=None, 
           scheduler=None,
-          device='cpu'):
+          device='cpu',
+          init_hidden=False):
     for data in dataloader:
         optimizer.zero_grad()
         note, embeddings, labels = data
+        if init_hidden:
+            model.hidden = model.init_hidden(len(note), device=device)
         note = note.to(device)
         embeddings = embeddings.to(device)
         labels = labels.to(device)
@@ -80,12 +83,16 @@ def test_model(model,
                threshold=0.5, 
                k=10, 
                by_label=False, 
-               device='cpu'):
+               device='cpu',
+               init_hidden=False):
     y = []
     yhat = []
     recall = []
+    model.eval()
     for data in dataloader:
         note, embeddings, labels = data
+        if init_hidden:
+            model.hidden = model.init_hidden(len(note), device=device)
         note = note.to(device)
         embeddings = embeddings.to(device)
         out = model(note, embeddings, wikivec).cpu().detach().numpy()
@@ -137,7 +144,9 @@ def train_model(model,
                 n_epochs=10, 
                 profile=False, 
                 log_path='./log',
-                device='cpu'):
+                device='cpu',
+                init_hidden=False):
+    model.train()
     loss_function = nn.BCELoss()
     if optimizer is None:
         optimizer = optim.Adam(model.parameters())
@@ -156,15 +165,18 @@ def train_model(model,
                       optimizer=optimizer, 
                       profiler=prof, 
                       scheduler=scheduler,
-                      device=device)
+                      device=device,
+                      init_hidden=init_hidden)
                 t_recall_at_k, t_micro_f1, t_macro_f1, t_micro_auc, t_macro_auc, _ = test_model(model, 
                                                                                                 train_dataloader, 
                                                                                                 wikivec,
-                                                                                                device=device)
+                                                                                                device=device,
+                                                                                                init_hidden=init_hidden)
                 v_recall_at_k, v_micro_f1, v_macro_f1, v_micro_auc, v_macro_auc, _ = test_model(model, 
                                                                                                 val_dataloader, 
                                                                                                 wikivec,
-                                                                                                device=device)
+                                                                                                device=device,
+                                                                                                init_hidden=init_hidden)
                 print(f'Epoch: {epoch+1:03d}, Train Recall@10: {t_recall_at_k:.4f}, Val Recall@10: {v_recall_at_k:.4f}' + 
                     f', Train Micro F1: {t_micro_f1:.4f}, Val Micro F1: {v_micro_f1:.4f}' +
                     f', Train Macro F1: {t_macro_f1:.4f}, Val Macro F1: {v_macro_f1:.4f}' +
@@ -180,15 +192,18 @@ def train_model(model,
                   optimizer=optimizer, 
                   profiler=prof, 
                   scheduler=scheduler,
-                  device=device)
+                  device=device,
+                  init_hidden=init_hidden)
             t_recall_at_k, t_micro_f1, t_macro_f1, t_micro_auc, t_macro_auc, _ = test_model(model, 
                                                                                             train_dataloader, 
                                                                                             wikivec,
-                                                                                            device=device)
+                                                                                            device=device,
+                                                                                            init_hidden=init_hidden)
             v_recall_at_k, v_micro_f1, v_macro_f1, v_micro_auc, v_macro_auc, _ = test_model(model, 
                                                                                             val_dataloader, 
                                                                                             wikivec,
-                                                                                            device=device)
+                                                                                            device=device,
+                                                                                            init_hidden=init_hidden)
             print(f'Epoch: {epoch+1:03d}, Train Recall@10: {t_recall_at_k:.4f}, Val Recall@10: {v_recall_at_k:.4f}' + 
                 f', Train Micro F1: {t_micro_f1:.4f}, Val Micro F1: {v_micro_f1:.4f}' +
                 f', Train Macro F1: {t_macro_f1:.4f}, Val Macro F1: {v_macro_f1:.4f}' +
