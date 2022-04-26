@@ -56,8 +56,11 @@ class ModifiedKSI(nn.Module):
                                          notevec))
         
             z = self.weights(torch.stack(
-                [torch.where(mask > 0, notevec, torch.tensor(0, dtype=notevec.dtype).to(device)), 
-                 torch.where(mask > 0, wikivec, torch.tensor(0, dtype=wikivec.dtype).to(device))], dim=-1)).squeeze()
+                [torch.where(mask > 0, notevec, 
+                             torch.tensor(0, dtype=notevec.dtype).to(device)), 
+                 torch.where(mask > 0, wikivec, 
+                             torch.tensor(0, dtype=wikivec.dtype).to(device))], 
+                dim=-1)).squeeze()
             e = self.ksi_embedding(z)
             attention_scores = torch.sigmoid(self.ksi_attention(e))
             v = torch.mul(attention_scores, e)
@@ -133,3 +136,55 @@ class CAML(nn.Module):
         scores = torch.sigmoid(out)
         return scores
 
+
+class LSTM(nn.Module):
+    def __init__(self, 
+                 n_words, 
+                 n_wiki, 
+                 n_embedding,
+                 n_hidden=100, 
+                 batch_size=32, 
+                 ksi=None, 
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.n_hidden = n_hidden
+        self.batch_size = batch_size
+        
+        self.ksi = ksi
+        self.word_embeddings = nn.Embedding(n_words+1, n_embedding)
+        self.dropout_embedding = nn.Dropout(p=0.2)
+        
+        self.lstm = nn.LSTM(n_embedding, n_hidden)
+        self.hidden2code = nn.Linear(n_hidden, n_wiki)
+        self.hidden = self.init_hidden()
+        
+    def init_hidden(self, batch_size=None, device='cpu'):
+        if batch_size is None:
+            batch_size = self.batch_size
+        return (torch.zeros(1, batch_size, self.n_hidden).to(device),
+                torch.zeros(1, batch_size, self.n_hidden).to(device))
+    
+    def forward(self, note, notevec=None, wikivec=None):
+        device = next(self.parameters()).device
+        if device != 'cpu' and self.hidden[0].device != device:
+            self.hidden = tuple(h.to(device) for h in self.hidden)
+        
+        if note.shape[0] != self.batch_size:
+            self.hidden = self.init_hidden(note.shape[0], device)
+        
+        # batch_size, n = note.shape
+        with torch.profiler.record_function("LSTM Embedding"):
+            embeddings = self.word_embeddings(note).permute(1, 0, 2) # (n, batch_size, n_embedding)
+            embeddings = self.dropout_embedding(embeddings)
+        
+        with torch.profiler.record_function("LSTM Forward"):
+            lstm_out, self.hidden = self.lstm(embeddings, self.hidden)
+            lstm_out = lstm_out.permute(1, 2, 0) # (batch_size, n_hidden, n)
+            out = nn.MaxPool1d(lstm_out.shape[2])(lstm_out).squeeze(2)
+            out = self.hidden2code(out)
+            
+        if self.ksi:
+            out += self.ksi.forward_ksi(notevec, wikivec)
+        
+        scores = torch.sigmoid(out)
+        return scores
