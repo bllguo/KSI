@@ -224,8 +224,8 @@ class LSTMattn(nn.Module):
         if device != 'cpu' and self.hidden[0].device != device:
             self.hidden = tuple(h.to(device) for h in self.hidden)
         
-        if note.shape[0] != self.batch_size:
-            self.hidden = self.init_hidden(note.shape[0], device)
+        # if note.shape[0] != self.batch_size:
+            # self.hidden = self.init_hidden(note.shape[0], device)
         
         # batch_size, n = note.shape
         with torch.profiler.record_function("LSTM Embedding"):
@@ -233,7 +233,10 @@ class LSTMattn(nn.Module):
             embeddings = self.dropout_embedding(embeddings)
         
         with torch.profiler.record_function("LSTM Forward"):
-            lstm_out, self.hidden = self.lstm(embeddings, self.hidden)
+            hidden = self.hidden[:, :note.shape[0], :]
+            lstm_out, hidden = self.lstm(embeddings, hidden)
+            self.hidden[:, :note.shape[0], :] = hidden
+            
             lstm_out = lstm_out.permute(1, 0, 2) # (batch_size, n, n_hidden)
             alpha = self.H.weight.matmul(lstm_out.permute(0, 2, 1))
             alpha = F.softmax(alpha, dim=2)
