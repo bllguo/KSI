@@ -2,11 +2,17 @@ from preprocess_mimic import process_mimic
 from vectorize_data import process_data
 from preprocess_final import preprocess
 import os
-
+import sys
 
 if __name__ == "__main__":
-    process_mimic(file_notes='data/NOTEEVENTS.csv',
-                  file_diagnoses='data/DIAGNOSES_ICD.csv',
+    if len(sys.argv) > 1 and sys.argv[1] == 'aws':
+        file_notes = 's3://dl4h-ksi/data/NOTEEVENTS.csv'
+        file_diagnoses = 's3://dl4h-ksi/data/DIAGNOSES_ICD.csv'
+    else:
+        file_notes = 'data/NOTEEVENTS.csv'
+        file_diagnoses = 'data/DIAGNOSES_ICD.csv'
+    process_mimic(file_notes=file_notes,
+                  file_diagnoses=file_diagnoses,
                   word_threshold=10,
                   code_freq_threshold=0,
                   output_file='data/combined_dataset')
@@ -42,7 +48,7 @@ if __name__ == "__main__":
                out_dir=f'data/{subdir}',
                original=False,
                vectorizer_type='binary')
-    
+
     # original dataset from paper, normalized word frequencies
     subdir = 'original_freqs/'
     os.makedirs(f'data/{subdir}', exist_ok=True)
