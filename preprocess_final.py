@@ -43,13 +43,13 @@ def get_XY(file):
                     features.append(feat)
             line=f.readline()
     return features, labels
-    
-        
-def update_wikivec(wikivec, 
-                   wikivoc, 
-                   wiki_codes, 
-                   labels, 
-                   combine_vecs=True, 
+
+
+def update_wikivec(wikivec,
+                   wikivoc,
+                   wiki_codes,
+                   labels,
+                   combine_vecs=True,
                    vectorizer_type='binary'):
     label_to_ix = {}
     ix_to_label = {}
@@ -85,20 +85,20 @@ def produce_multihot_labels(data, wikivoc, label_to_ix):
         new_data.append((doc, note, label))
     return np.array(new_data)
 
-def save_data(features, 
-              labels, 
+def save_data(features,
+              labels,
               wikivec,
-              notevec, 
-              wikivoc, 
+              notevec,
+              wikivoc,
               out_dir='data/',
-              test_split=.2, 
-              val_split=.125, 
+              test_split=.2,
+              val_split=.125,
               seed=42):
     data = []
     for i in range(len(features)):
         data.append((features[i], notevec[i], labels[i]))
-        
-    data = np.array(data)  
+
+    data = np.array(data)
 
     label_to_ix = {}
     ix_to_label={}
@@ -110,17 +110,30 @@ def save_data(features,
                     ix_to_label[label_to_ix[code]]=code
     np.save(f'{out_dir}label_to_ix', label_to_ix)
     np.save(f'{out_dir}ix_to_label', ix_to_label)
-    
+
     data = produce_multihot_labels(data, wikivoc, label_to_ix)
-    
+    label_vec = []
+    for item in data:
+        _, _, label = item
+        label_vec.append(label)
+    label_vec = np.array(label_vec)
+    code_frequencies = label_vec.sum(axis=0)
+    bin_10 = np.argwhere((code_frequencies <= 10) & (code_frequencies > 0)).squeeze()
+    bin_50 = np.argwhere((code_frequencies <= 50) & (code_frequencies > 10)).squeeze()
+    bin_100 = np.argwhere((code_frequencies <= 100) & (code_frequencies > 50)).squeeze()
+    bin_500 = np.argwhere((code_frequencies <= 500) & (code_frequencies > 100)).squeeze()
+    bin_remaining = np.argwhere(code_frequencies > 500).squeeze()
+
+    bin_data = np.array([bin_10, bin_50, bin_100, bin_500, bin_remaining])
+    np.save('data/bin_data', bin_data)
+
     training_data, test_data = train_test_split(data, test_size=test_split, random_state=seed)
     training_data, val_data = train_test_split(training_data, test_size=val_split, random_state=seed)
-    
-    
+
     np.save(f'{out_dir}training_data', training_data)
     np.save(f'{out_dir}test_data', test_data)
     np.save(f'{out_dir}val_data', val_data)
-    
+
     word_to_ix = {}
     ix_to_word = {}
     ix_to_word[0] = 'OUT'
@@ -129,10 +142,10 @@ def save_data(features,
         for word in doc:
             if word not in word_to_ix:
                 word_to_ix[word] = len(word_to_ix)+1
-                ix_to_word[word_to_ix[word]] = word  
+                ix_to_word[word_to_ix[word]] = word
     np.save(f'{out_dir}word_to_ix', word_to_ix)
     np.save(f'{out_dir}ix_to_word', ix_to_word)
-    
+
     code_dict = {}
     for codes in labels:
         for code in codes:
@@ -157,7 +170,7 @@ def preprocess(file_wiki,
                vectorizer_type='binary'):
     wikivec=np.load(file_wikivec)
     notevec=np.load(file_notevec)
-    
+
     wikivoc, wiki_codes = get_wiki_codes(file_wiki)
     if original:
         wiki_codes['d_072']=[214]
@@ -166,7 +179,7 @@ def preprocess(file_wiki,
         wiki_codes['d_386']=[219]
     np.save(f'{out_dir}wikivoc', wikivoc)
     features, labels = get_XY(file_mimic)
-    
+
     wikivec = update_wikivec(wikivec, wikivoc, wiki_codes, labels,
                              combine_vecs=not original, vectorizer_type=vectorizer_type)
     save_data(features, labels, wikivec, notevec, wikivoc, out_dir,
