@@ -110,15 +110,23 @@ def test_model(model,
         ind_topk = np.argpartition(yhat[i, :], -topk)[-topk:]
         recall.append(y[i, ind_topk].sum() / n_labels if n_labels > 0 else np.nan)
 
+    mask = np.sum(y, axis=0) > 0 # mask out classes without both positive and negative examples
+    
+    def generate_mask(bin_indices):
+        bin_mask = np.zeros(y.shape[1], dtype=bool)
+        bin_mask[bin_indices] = True
+        full_mask = mask & bin_mask
+        return full_mask
+    
     # compute macro AUC by label frequency group
     label_freq_aucs = None
     if label_bins:
         loaded_bin_data = np.load(label_bins, allow_pickle=True)
-        bin_10 = loaded_bin_data[0]
-        bin_50 = loaded_bin_data[1]
-        bin_100 = loaded_bin_data[2]
-        bin_500 = loaded_bin_data[3]
-        bin_remaining = [4]
+        bin_10 = generate_mask(loaded_bin_data[0])
+        bin_50 = generate_mask(loaded_bin_data[1])
+        bin_100 = generate_mask(loaded_bin_data[2])
+        bin_500 = generate_mask(loaded_bin_data[3])
+        bin_remaining = generate_mask(loaded_bin_data[4])
         label_freq_aucs = {}
         label_freq_aucs['1-10'] = roc_auc_score(y[:, bin_10], yhat[:, bin_10], average='macro')
         label_freq_aucs['11-50'] = roc_auc_score(y[:, bin_50], yhat[:, bin_50], average='macro')
@@ -127,7 +135,6 @@ def test_model(model,
         label_freq_aucs['>500'] = roc_auc_score(y[:, bin_remaining], yhat[:, bin_remaining], average='macro')
 
     # compute overall metrics
-    mask = np.sum(y, axis=0) > 0 # mask out classes without both positive and negative examples
     recall = np.nanmean(recall)
     micro_f1 = f1_score(y[:, mask], preds[:, mask], average='micro')
     macro_f1 = f1_score(y[:, mask], preds[:, mask], average='macro')

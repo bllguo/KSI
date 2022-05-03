@@ -3,13 +3,13 @@ This repository is forked from https://github.com/tiantiantu/KSI and extends the
 * **Bai, T., Vucetic, S., Improving Medical Code Prediction from Clinical Text via Incorporating Online Knowledge Sources, The Web Conference (WWW'19), 2019.**
 
 
-### 1 Setup
-#### 1.1 Requirements
+## 1 - Setup
+### 1.1 - Requirements
 All dependencies are documented in the `requirements.txt`.
 
 Before running the code, you need to apply for [MIMIC-III](https://mimic.physionet.org/gettingstarted/access/) dataset and place the files "NOTEEVENTS.csv" and "DIAGNOSES_ICD.csv" under the `/data` directory of the project.
 
-#### 1.2 Data Preprocessing
+### 1.2 - Data Preprocessing
 
 Afterwards, to build the datasets, run `build_datasets.py` from the root directory of the project. This will generate three datasets under `/data` containing:
 * the dataset in its original form from the original repo
@@ -22,10 +22,10 @@ For more flexibility, you can also use the individual preprocessing scripts, bas
 2. `vectorize_mimic.py`
 3. `preprocess_final.py`
 
-#### 1.3 Different External Knowledge Sources
+### 1.3 -  Different External Knowledge Sources
 You can also rebuild the datasets using different external knowledge sources. To that end, `wiki_scraper.ipynb` is a Jupyter notebook that scrapes Wikipedia to build an updated dataset of Wiki articles associated with ICD-9 codes. It can be used in place of the originally provided `wikipedia_knowledge` file.
 
-### 2 Running the Models
+## 2 - Running the Models
 
 To train the models, run the Jupyter notebooks below. Each notebook is dedicated to a single baseline classifier model, and evaluates:
 1. Performance of the baseline alone
@@ -39,6 +39,6 @@ Four baselines are implemented, as in the original paper:
 3. `KSI_LSTM.ipynb` - LSTM baseline classifier
 4. `KSI_LSTMattn.ipynb` - LSTM w/ attention baseline classifier
 
-### 3 Evaluation & Results
+## 3 -  Evaluation & Results
 
 To evaluate results for each model, run the Jupyter notebook `results.ipynb`, changing the `model` argument as appropriate to one of `CNN`, `CAML`, `LSTM`, or `LSTMatt`. 
