@@ -125,7 +125,7 @@ def save_data(features,
     bin_remaining = np.argwhere(code_frequencies > 500).squeeze()
 
     bin_data = np.array([bin_10, bin_50, bin_100, bin_500, bin_remaining])
-    np.save('data/bin_data', bin_data)
+    np.save(f'{out_dir}bin_data', bin_data)
 
     training_data, test_data = train_test_split(data, test_size=test_split, random_state=seed)
     training_data, val_data = train_test_split(training_data, test_size=val_split, random_state=seed)

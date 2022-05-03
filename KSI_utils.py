@@ -83,7 +83,7 @@ def test_model(model,
                wikivec=None,
                threshold=0.5,
                k=10,
-               by_label=False,
+               label_bins=None,
                device='cpu',
                init_hidden=False):
     y = []
@@ -112,8 +112,8 @@ def test_model(model,
 
     # compute macro AUC by label frequency group
     label_freq_aucs = None
-    if by_label:
-        loaded_bin_data = np.load('data/bin_data.npy', allow_pickle=True)
+    if label_bins:
+        loaded_bin_data = np.load(label_bins, allow_pickle=True)
         bin_10 = loaded_bin_data[0]
         bin_50 = loaded_bin_data[1]
         bin_100 = loaded_bin_data[2]
