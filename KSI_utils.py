@@ -127,12 +127,20 @@ def test_model(model,
         bin_100 = generate_mask(loaded_bin_data[2])
         bin_500 = generate_mask(loaded_bin_data[3])
         bin_remaining = generate_mask(loaded_bin_data[4])
-        label_freq_aucs = {}
-        label_freq_aucs['1-10'] = roc_auc_score(y[:, bin_10], yhat[:, bin_10], average='macro')
-        label_freq_aucs['11-50'] = roc_auc_score(y[:, bin_50], yhat[:, bin_50], average='macro')
-        label_freq_aucs['51-100'] = roc_auc_score(y[:, bin_100], yhat[:, bin_100], average='macro')
-        label_freq_aucs['101-500'] = roc_auc_score(y[:, bin_500], yhat[:, bin_500], average='macro')
-        label_freq_aucs['>500'] = roc_auc_score(y[:, bin_remaining], yhat[:, bin_remaining], average='macro')
+    else:
+        code_frequencies = y.sum(axis=0)
+        bin_10 = np.argwhere((code_frequencies <= 10) & (code_frequencies > 0)).squeeze()
+        bin_50 = np.argwhere((code_frequencies <= 50) & (code_frequencies > 10)).squeeze()
+        bin_100 = np.argwhere((code_frequencies <= 100) & (code_frequencies > 50)).squeeze()
+        bin_500 = np.argwhere((code_frequencies <= 500) & (code_frequencies > 100)).squeeze()
+        bin_remaining = np.argwhere(code_frequencies > 500).squeeze()
+        
+    label_freq_aucs = {}
+    label_freq_aucs['1-10'] = roc_auc_score(y[:, bin_10], yhat[:, bin_10], average='macro')
+    label_freq_aucs['11-50'] = roc_auc_score(y[:, bin_50], yhat[:, bin_50], average='macro')
+    label_freq_aucs['51-100'] = roc_auc_score(y[:, bin_100], yhat[:, bin_100], average='macro')
+    label_freq_aucs['101-500'] = roc_auc_score(y[:, bin_500], yhat[:, bin_500], average='macro')
+    label_freq_aucs['>500'] = roc_auc_score(y[:, bin_remaining], yhat[:, bin_remaining], average='macro')
 
     # compute overall metrics
     recall = np.nanmean(recall)
