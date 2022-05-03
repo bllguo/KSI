@@ -7,4 +7,4 @@ seaborn==0.11.2
 stop_words==2018.7.23
 torch==1.11.0
 torchinfo==1.6.5
-s3fs
+s3fs==2022.3.0
