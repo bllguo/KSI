@@ -83,7 +83,7 @@ def produce_multihot_labels(data, wikivoc, label_to_ix):
             if code in wikivoc.keys():
                 label[label_to_ix[code]] = 1.
         new_data.append((doc, note, label))
-    return np.array(new_data)
+    return np.array(new_data, dtype=object)
 
 def save_data(features,
               labels,
@@ -98,7 +98,7 @@ def save_data(features,
     for i in range(len(features)):
         data.append((features[i], notevec[i], labels[i]))
 
-    data = np.array(data)
+    data = np.array(data, dtype=object)
 
     label_to_ix = {}
     ix_to_label={}
@@ -117,14 +117,15 @@ def save_data(features,
         _, _, label = item
         label_vec.append(label)
     label_vec = np.array(label_vec)
+    
+    # compute and save code frequencies over entire dataset, for evaluation purposes
     code_frequencies = label_vec.sum(axis=0)
     bin_10 = np.argwhere((code_frequencies <= 10) & (code_frequencies > 0)).squeeze()
     bin_50 = np.argwhere((code_frequencies <= 50) & (code_frequencies > 10)).squeeze()
     bin_100 = np.argwhere((code_frequencies <= 100) & (code_frequencies > 50)).squeeze()
     bin_500 = np.argwhere((code_frequencies <= 500) & (code_frequencies > 100)).squeeze()
     bin_remaining = np.argwhere(code_frequencies > 500).squeeze()
-
-    bin_data = np.array([bin_10, bin_50, bin_100, bin_500, bin_remaining])
+    bin_data = np.array([bin_10, bin_50, bin_100, bin_500, bin_remaining], dtype=object)
     np.save(f'{out_dir}bin_data', bin_data)
 
     training_data, test_data = train_test_split(data, test_size=test_split, random_state=seed)
