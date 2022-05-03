@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 import torch
 import torch.nn as nn
@@ -161,10 +162,17 @@ def train_model(model,
                 profile=False,
                 log_path='./log',
                 device='cpu',
-                init_hidden=False):
+                init_hidden=False,
+                early_stopping=None,
+                early_stopping_metric='recall_at_k'):
     loss_function = nn.BCELoss()
     if optimizer is None:
         optimizer = optim.Adam(model.parameters())
+    best_results = -1
+    best_iter = -1
+    performance = []
+    models = []
+        
     if profile:
         with torch.profiler.profile(activities=[
                 torch.profiler.ProfilerActivity.CPU,
@@ -174,14 +182,14 @@ def train_model(model,
                on_trace_ready=torch.profiler.tensorboard_trace_handler(log_path)) as prof:
             for epoch in range(n_epochs):
                 train(model,
-                      train_dataloader,
-                      loss_function,
-                      wikivec=wikivec,
-                      optimizer=optimizer,
-                      profiler=prof,
-                      scheduler=scheduler,
-                      device=device,
-                      init_hidden=init_hidden)
+                    train_dataloader,
+                    loss_function,
+                    wikivec=wikivec,
+                    optimizer=optimizer,
+                    profiler=prof,
+                    scheduler=scheduler,
+                    device=device,
+                    init_hidden=init_hidden)
                 t_recall_at_k, t_micro_f1, t_macro_f1, t_micro_auc, t_macro_auc, _ = test_model(model,
                                                                                                 train_dataloader,
                                                                                                 wikivec,
@@ -197,18 +205,39 @@ def train_model(model,
                     f', Train Macro F1: {t_macro_f1:.4f}, Val Macro F1: {v_macro_f1:.4f}' +
                     f', Train Micro AUC: {t_micro_auc:.4f}, Val Micro AUC: {v_micro_auc:.4f}' +
                     f', Train Macro AUC: {t_macro_auc:.4f}, Val Macro AUC: {v_macro_auc:.4f}')
+                
+                if early_stopping:
+                    if early_stopping_metric == 'recall_at_k':
+                        metric = v_recall_at_k
+                    elif early_stopping_metric == 'micro_f1':
+                        metric = v_micro_f1
+                    elif early_stopping_metric == 'macro_f1':
+                        metric = v_macro_f1
+                    elif early_stopping_metric == 'micro_auc':
+                        metric = v_micro_auc
+                    elif early_stopping_metric == 'macro_auc':
+                        metric = v_macro_auc
+                    performance.append(metric)
+                    models.append(copy.deepcopy(model.state_dict()))
+                    if metric > best_results:
+                        best_results = metric
+                        best_iter = len(performance)-1
+                    if (len(performance) - best_iter) > early_stopping:
+                        print(f'Early stopping at epoch {epoch}')
+                        model = model.load_state_dict(models[best_iter])
+                        break
     else:
         prof = None
         for epoch in range(n_epochs):
             train(model,
-                  train_dataloader,
-                  loss_function,
-                  wikivec=wikivec,
-                  optimizer=optimizer,
-                  profiler=prof,
-                  scheduler=scheduler,
-                  device=device,
-                  init_hidden=init_hidden)
+                train_dataloader,
+                loss_function,
+                wikivec=wikivec,
+                optimizer=optimizer,
+                profiler=prof,
+                scheduler=scheduler,
+                device=device,
+                init_hidden=init_hidden)
             t_recall_at_k, t_micro_f1, t_macro_f1, t_micro_auc, t_macro_auc, _ = test_model(model,
                                                                                             train_dataloader,
                                                                                             wikivec,
@@ -224,4 +253,25 @@ def train_model(model,
                 f', Train Macro F1: {t_macro_f1:.4f}, Val Macro F1: {v_macro_f1:.4f}' +
                 f', Train Micro AUC: {t_micro_auc:.4f}, Val Micro AUC: {v_micro_auc:.4f}' +
                 f', Train Macro AUC: {t_macro_auc:.4f}, Val Macro AUC: {v_macro_auc:.4f}')
+            
+            if early_stopping:
+                if early_stopping_metric == 'recall_at_k':
+                    metric = v_recall_at_k
+                elif early_stopping_metric == 'micro_f1':
+                    metric = v_micro_f1
+                elif early_stopping_metric == 'macro_f1':
+                    metric = v_macro_f1
+                elif early_stopping_metric == 'micro_auc':
+                    metric = v_micro_auc
+                elif early_stopping_metric == 'macro_auc':
+                    metric = v_macro_auc
+                performance.append(metric)
+                models.append(copy.deepcopy(model.state_dict()))
+                if metric > best_results:
+                    best_results = metric
+                    best_iter = len(performance)-1
+                if (len(performance) - best_iter) > early_stopping:
+                    print(f'Early stopping at epoch {epoch}')
+                    model = model.load_state_dict(models[best_iter])
+                    break
     return prof
