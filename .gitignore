@@ -2,7 +2,6 @@
 !IDlist.npy
 
 *.csv
-*.pt
 *.json
 
 .ipynb_checkpoints
