@@ -1,6 +1,7 @@
 *.npy
 !IDlist.npy
 
+*.png
 *.csv
 *.json
 
