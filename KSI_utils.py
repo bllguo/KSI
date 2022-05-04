@@ -271,7 +271,7 @@ def train_model(model,
                     best_results = metric
                     best_iter = len(performance)-1
                 if (len(performance) - best_iter) > early_stopping:
-                    print(f'Early stopping at epoch {epoch}')
+                    print(f'Early stopping at epoch {epoch+1}')
                     model = model.load_state_dict(models[best_iter])
                     break
     return prof
