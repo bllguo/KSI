@@ -9,25 +9,27 @@ All dependencies are documented in the `requirements.txt`.
 
 Before running the code, you need to apply for [MIMIC-III](https://mimic.physionet.org/gettingstarted/access/) dataset and place the files "NOTEEVENTS.csv" and "DIAGNOSES_ICD.csv" under the `/data` directory of the project.
 
+The Wikipedia articles for ICD-9 codes are already provided under `/data` in the [`wikipedia_knowledge`](data/wikipedia_knowledge) file, taken from the original repository.
+
 ### 1.2 - Data Preprocessing
 
-Afterwards, to build the datasets, run `build_datasets.py` from the root directory of the project. This will generate three datasets under `/data` containing:
+Afterwards, to build the datasets, run [`build_datasets.py`](build_datasets.py) from the root directory of the project. This will generate three datasets under `/data` containing:
 * the dataset in its original form from the original repo
 * a modified version of that dataset that supports multiple Wiki articles associated to a code rather than just one article per code
 * a version of the dataset using normalized count vector representations of text rather than binary vectors encoding word presence. Meant to be used with the `ModifiedKSI` mechanism.
 * a version of the dataset using tf-idf vector representations of text rather than binary vectors encoding word presence. Meant to be used with the `ModifiedKSI` mechanism.
 
 For more flexibility, you can also use the individual preprocessing scripts, based off of the scripts in the original repo. The order is:
-1. `preprocess_mimic.py`
-2. `vectorize_mimic.py`
-3. `preprocess_final.py`
+1. [`preprocess_mimic.py`](preprocess_mimic.py)
+2. [`vectorize_mimic.py`](vectorize_mimic.py)
+3. [`preprocess_final.py`](preprocess_final.py)
 
 ### 1.3 -  Different External Knowledge Sources
-You can also rebuild the datasets using different external knowledge sources. To that end, `wiki_scraper.ipynb` is a Jupyter notebook that scrapes Wikipedia to build an updated dataset of Wiki articles associated with ICD-9 codes. It can be used in place of the originally provided `wikipedia_knowledge` file.
+You can also rebuild the datasets using different external knowledge sources. To that end, [`wiki_scraper.ipynb`](`wiki_scraper.ipynb`) is a Jupyter notebook that scrapes Wikipedia to build an updated dataset of Wiki articles associated with ICD-9 codes. A sample output is available under `/data` as [`wikipedia_knowledge2`](data/wikipedia_knowledge_2). It can be used in place of the originally provided [`wikipedia_knowledge`](data/wikipedia_knowledge) file.
 
 ## 2 - Running the Models
 
-Pretrained models are included in the `data` directory. Example usage [can be seen in `results.ipynb`](results.ipynb). Note that saved `torch` models do not save their model definitions, so you will need to import them from [`KSI_models.py`](KSI_models.py) first.
+Pretrained models are included in the `data` directory. Example usage can be seen in [`results.ipynb`](results.ipynb). Note that saved `torch` models do not save their model definitions, so you will need to import them from [`KSI_models.py`](KSI_models.py) first.
 
 To train the models yourself, run the Jupyter notebooks below. Each notebook is dedicated to a single baseline classifier model, and evaluates:
 1. Performance of the baseline alone
