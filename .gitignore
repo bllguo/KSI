@@ -1,8 +1,8 @@
 *.npy
 !IDlist.npy
 
-*.png
 *.csv
+!results/metrics.csv
 *.json
 
 .ipynb_checkpoints

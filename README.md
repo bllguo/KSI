@@ -27,7 +27,9 @@ You can also rebuild the datasets using different external knowledge sources. To
 
 ## 2 - Running the Models
 
-To train the models, run the Jupyter notebooks below. Each notebook is dedicated to a single baseline classifier model, and evaluates:
+Pretrained models are included in the `data` directory. Example usage [can be seen in `results.ipynb`](results.ipynb). Note that saved `torch` models do not save their model definitions, so you will need to import them from [`KSI_models.py`](KSI_models.py) first.
+
+To train the models yourself, run the Jupyter notebooks below. Each notebook is dedicated to a single baseline classifier model, and evaluates:
 1. Performance of the baseline alone
 2. Performance of the baseline with the KSI mechanism
 3. Performance of the baseline with a modified KSI mechanism over text representations that encode word frequencies, not just word presence as in the original paper
@@ -39,6 +41,36 @@ Four baselines are implemented, as in the original paper:
 3. `KSI_LSTM.ipynb` - LSTM baseline classifier
 4. `KSI_LSTMattn.ipynb` - LSTM w/ attention baseline classifier
 
+This is a total of 16 models.
+
 ## 3 -  Evaluation & Results
 
-To evaluate results for each model, run the Jupyter notebook `results.ipynb`, changing the `model` argument as appropriate to one of `CNN`, `CAML`, `LSTM`, or `LSTMatt`. 
+Metrics for the included trained models are shown below. 
+
+| Model                       | Recall@10 | Micro-F1 | Macro-F1 | Micro-AUC | Macro-AUC |
+|-----------------------------|-----------|----------|----------|-----------|-----------|
+| CNN                         | 0.796     | 0.655    | 0.253    | 0.975     | 0.850     |
+| KSI+CNN                     | 0.795     | 0.648    | 0.257    | 0.977     | 0.892     |
+| ModifiedKSI+CNN             | 0.807     | 0.657    | 0.302    | 0.980     | 0.906     |
+| ModifiedKSI+CNN, tfidf      | 0.806     | 0.655    | 0.316    | 0.980     | 0.900     |
+|-----------------------------|-----------|----------|----------|-----------|-----------|
+| CAML                        | 0.804     | 0.658    | 0.243    | 0.976     | 0.835     |
+| KSI+CAML                    | 0.803     | 0.645    | 0.236    | 0.978     | 0.891     |
+| ModifiedKSI+CAML            | 0.807     | 0.648    | 0.278    | 0.980     | 0.901     |
+| ModifiedKSI+CAML, tfidf     | 0.808     | 0.641    | 0.268    | 0.980     | 0.904     |
+|-----------------------------|-----------|----------|----------|-----------|-----------|
+| LSTM                        | 0.714     | 0.583    | 0.081    | 0.965     | 0.822     |
+| KSI+LSTM                    | 0.762     | 0.593    | 0.189    | 0.974     | 0.880     |
+| ModifiedKSI+LSTM            | 0.794     | 0.623    | 0.244    | 0.980     | 0.900     |
+| ModifiedKSI+LSTM, tfidf     | 0.789     | 0.614    | 0.248    | 0.979     | 0.896     |
+|-----------------------------|-----------|----------|----------|-----------|-----------|
+| LSTMattn                    | 0.824     | 0.685    | 0.259    | 0.980     | 0.855     |
+| KSI+LSTMattn                | 0.776     | 0.612    | 0.210    | 0.975     | 0.880     |
+| ModifiedKSI+LSTMattn        | 0.812     | 0.648    | 0.248    | 0.981     | 0.906     |
+| ModifiedKSI+LSTMattn, tfidf | 0.797     | 0.626    | 0.248    | 0.980     | 0.898     |
+
+Performance by ICD-9 code frequency is plotted below.
+
+![Macro-averaged AUC by ICD-9 code frequency](results/aucs.png)
+
+To evaluate results for each model yourself, run the included notebook [`results.ipynb`](results.ipynb), changing the `model` argument as appropriate to one of `CNN`, `CAML`, `LSTM`, or `LSTMatt`. 
